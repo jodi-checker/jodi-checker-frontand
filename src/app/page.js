@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   FaUser, FaHeart, FaStar, FaFire,
   FaHandshake, FaSmile, FaHome, FaHeartbeat
@@ -19,7 +19,6 @@ export default function MatchMaking() {
   const [fact, setFact] = useState("");
   const [result, setResult] = useState(null);
   const [error, setError] = useState("");
-
   const funFacts = [
     "Do you know? Gun Milan analyzes 8 aspects of compatibility called Kootas.",
     "A score above 18 is considered a good match in traditional astrology.",
@@ -28,15 +27,35 @@ export default function MatchMaking() {
     "Graha Maitri reflects your emotional and mental connection.",
   ];
 
+  // Rotate facts every 5 seconds while loading is true
+  const factIndexRef = useRef(0);
+  useEffect(() => {
+    let interval;
+    if (loading) {
+      // start from first fact immediately
+      factIndexRef.current = 0;
+      setFact(funFacts[factIndexRef.current]);
+      interval = setInterval(() => {
+        factIndexRef.current = (factIndexRef.current + 1) % funFacts.length;
+        setFact(funFacts[factIndexRef.current]);
+      }, 5000);
+    } else {
+      // clear fact when not loading
+      setFact("");
+      factIndexRef.current = 0;
+    }
+    return () => clearInterval(interval);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loading]);
+
   const handleChange = (e) =>
     setFormData({ ...formData, [e.target.name]: e.target.value });
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setLoading(true);
-    setResult(null);
-    setError("");
-    setFact(funFacts[Math.floor(Math.random() * funFacts.length)]);
+  setLoading(true);
+  setResult(null);
+  setError("");
 
     try {
       const [m_hour, m_minute] = formData.m_time.split(":").map(Number);
