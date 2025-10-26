@@ -9,6 +9,8 @@ export default function MatchMaking() {
   // Use NEXT_PUBLIC_API_URL for production (set this in Vercel).
   // Falls back to localhost for local development.
   const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+  // WhatsApp consultant number (in E.164 without +, e.g. 919876543210). Set NEXT_PUBLIC_WHATSAPP_NUMBER in Vercel.
+  const WHATSAPP_NUMBER = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || "";
 
   const [formData, setFormData] = useState({
     m_name: "", m_city: "", m_dob: "", m_time: "",
@@ -165,6 +167,28 @@ export default function MatchMaking() {
             <div className="mt-6 p-5 bg-white rounded-xl shadow-inner">
               <h3 className="font-semibold mb-2 text-red-600 text-lg">Explanation:</h3>
               <p className="text-gray-700 leading-relaxed">{result.explanation}</p>
+            </div>
+            {/* WhatsApp consult button */}
+            <div className="mt-4 flex items-center justify-center">
+              {WHATSAPP_NUMBER ? (
+                (() => {
+                  const msg = `Hi, I need a consultation about a compatibility result.\nMale: ${formData.m_name || "-"}\nFemale: ${formData.f_name || "-"}\nScore: ${result.total}/36\nCould you please explain the details?`;
+                  const phone = WHATSAPP_NUMBER.replace(/\D/g, "");
+                  const waUrl = `https://wa.me/${phone}?text=${encodeURIComponent(msg)}`;
+                  return (
+                    <a
+                      href={waUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-block bg-green-500 hover:bg-green-600 text-white font-semibold py-2 px-4 rounded-lg shadow"
+                    >
+                      Need a consultant? Chat on WhatsApp
+                    </a>
+                  );
+                })()
+              ) : (
+                <p className="text-sm text-gray-500">To enable quick consults set <code>NEXT_PUBLIC_WHATSAPP_NUMBER</code> in your environment.</p>
+              )}
             </div>
           </div>
         )}
