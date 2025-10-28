@@ -50,6 +50,65 @@ export default function MatchMaking() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [loading]);
 
+    // Helpers to encode/decode unicode-safe base64 for sharing
+    const encodeBase64Unicode = (str) =>
+      btoa(
+        encodeURIComponent(str).replace(/%([0-9A-F]{2})/g, function (match, p1) {
+          return String.fromCharCode('0x' + p1);
+        })
+      );
+
+    const decodeBase64Unicode = (s) =>
+      decodeURIComponent(
+        Array.prototype
+          .map.call(atob(s), function (c) {
+            return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+          })
+          .join('')
+      );
+
+    // If the page is opened with ?share=<base64>, decode it and populate result + form
+    useEffect(() => {
+      try {
+        const params = new URLSearchParams(window.location.search);
+        const share = params.get('share');
+        if (share) {
+          const decoded = decodeBase64Unicode(share);
+          const obj = JSON.parse(decoded);
+          if (obj?.result) {
+            // populate UI so consultant can view
+            setResult(obj.result);
+            setFormData((_) => ({
+              m_name: obj.male?.name || '',
+              m_city: obj.male?.city || '',
+              m_dob:
+                obj.male?.year && obj.male?.month && obj.male?.day
+                  ? `${obj.male.year}-${String(obj.male.month).padStart(2, '0')}-${String(obj.male.day).padStart(2, '0')}`
+                  : '',
+              m_time:
+                typeof obj.male?.hour !== 'undefined' && typeof obj.male?.minute !== 'undefined'
+                  ? `${String(obj.male.hour).padStart(2, '0')}:${String(obj.male.minute).padStart(2, '0')}`
+                  : '',
+              f_name: obj.female?.name || '',
+              f_city: obj.female?.city || '',
+              f_dob:
+                obj.female?.year && obj.female?.month && obj.female?.day
+                  ? `${obj.female.year}-${String(obj.female.month).padStart(2, '0')}-${String(obj.female.day).padStart(2, '0')}`
+                  : '',
+              f_time:
+                typeof obj.female?.hour !== 'undefined' && typeof obj.female?.minute !== 'undefined'
+                  ? `${String(obj.female.hour).padStart(2, '0')}:${String(obj.female.minute).padStart(2, '0')}`
+                  : '',
+            }));
+          }
+        }
+      } catch (e) {
+        console.error('Failed to parse share param', e);
+      }
+      // run-once on mount
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
+
   const handleChange = (e) =>
     setFormData({ ...formData, [e.target.name]: e.target.value });
 
@@ -172,7 +231,10 @@ export default function MatchMaking() {
             <div className="mt-4 flex items-center justify-center">
               {WHATSAPP_NUMBER ? (
                 (() => {
-                  const msg = `Hi, I need a consultation about a compatibility result.\nMale: ${formData.m_name || "-"}\nFemale: ${formData.f_name || "-"}\nScore: ${result.total}/36\nCould you please explain the details?`;
+                  let msg = `Hi, I need a consultation about a compatibility result.\nMale: ${formData.m_name || "-"}\nFemale: ${formData.f_name || "-"}\nScore: ${result.total}/36\nCould you please explain the details?`;
+                  if (shareUrl) {
+                    msg += `\nLink: ${shareUrl}`;
+                  }
                   const phone = WHATSAPP_NUMBER.replace(/\D/g, "");
                   const waUrl = `https://wa.me/${phone}?text=${encodeURIComponent(msg)}`;
                   return (
