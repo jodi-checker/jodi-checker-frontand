@@ -72,6 +72,7 @@ export default function MatchMaking() {
     // If the page is opened with ?share=<base64>, decode it and populate result + form
     useEffect(() => {
       try {
+        // 1) Check for ?share=<base64> parameter (client-encoded payload)
         const params = new URLSearchParams(window.location.search);
         const share = params.get('share');
         if (share) {
@@ -103,12 +104,46 @@ export default function MatchMaking() {
                   : '',
             }));
           }
+          return; // done
+        }
+
+        // 2) If path is /share/<id> then fetch stored match from backend
+        const path = window.location.pathname || '';
+        const sharePathMatch = path.match(/^\/share\/(.+)/);
+        if (sharePathMatch) {
+          const id = sharePathMatch[1];
+          const fetchShared = async () => {
+            try {
+              const res = await fetch(`${API_BASE}/api/match/${encodeURIComponent(id)}`);
+              if (!res.ok) throw new Error(`Failed to fetch shared match: ${res.status}`);
+              const data = await res.json();
+              // populate UI with returned data
+              if (data) {
+                setResult({ total: data.total, kootas: data.kootas || {}, explanation: data.explanation || '' });
+                const male = data.male || {};
+                const female = data.female || {};
+                setFormData((_) => ({
+                  m_name: male.name || '',
+                  m_city: male.city || '',
+                  m_dob: male.year && male.month && male.day ? `${male.year}-${String(male.month).padStart(2,'0')}-${String(male.day).padStart(2,'0')}` : '',
+                  m_time: typeof male.hour !== 'undefined' && typeof male.minute !== 'undefined' ? `${String(male.hour).padStart(2,'0')}:${String(male.minute).padStart(2,'0')}` : '',
+                  f_name: female.name || '',
+                  f_city: female.city || '',
+                  f_dob: female.year && female.month && female.day ? `${female.year}-${String(female.month).padStart(2,'0')}-${String(female.day).padStart(2,'0')}` : '',
+                  f_time: typeof female.hour !== 'undefined' && typeof female.minute !== 'undefined' ? `${String(female.hour).padStart(2,'0')}:${String(female.minute).padStart(2,'0')}` : '',
+                }));
+              }
+            } catch (e) {
+              console.error('Failed to fetch shared match by id', e);
+            }
+          };
+          fetchShared();
         }
       } catch (e) {
         console.error('Failed to parse share param', e);
       }
       // run-once on mount
-    }, []);
+  }, [API_BASE]);
 
   const handleChange = (e) =>
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -140,10 +175,15 @@ export default function MatchMaking() {
       if (!res.ok) throw new Error(data.error || "Something went wrong");
       setResult(data);
       try {
-        const sharePayload = { male: payload.male, female: payload.female, result: data };
-        const encoded = encodeBase64Unicode(JSON.stringify(sharePayload));
-        const url = `${window.location.origin}${window.location.pathname}?share=${encoded}`;
-        setShareUrl(url);
+        if (data.match_id) {
+          const url = `${window.location.origin}/share/${data.match_id}`;
+          setShareUrl(url);
+        } else {
+          const sharePayload = { male: payload.male, female: payload.female, result: data };
+          const encoded = encodeBase64Unicode(JSON.stringify(sharePayload));
+          const url = `${window.location.origin}${window.location.pathname}?share=${encoded}`;
+          setShareUrl(url);
+        }
       } catch (e) {
         console.error('Failed to build share URL', e);
       }
