@@ -30,6 +30,7 @@ export default function MatchMaking() {
   const [fact, setFact] = useState("");
   const [result, setResult] = useState(null);
   const [error, setError] = useState("");
+  const [shareUrl, setShareUrl] = useState("");
 
   // Rotate facts every 5 seconds while loading is true
   const factIndexRef = useRef(0);
@@ -138,6 +139,14 @@ export default function MatchMaking() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Something went wrong");
       setResult(data);
+      try {
+        const sharePayload = { male: payload.male, female: payload.female, result: data };
+        const encoded = encodeBase64Unicode(JSON.stringify(sharePayload));
+        const url = `${window.location.origin}${window.location.pathname}?share=${encoded}`;
+        setShareUrl(url);
+      } catch (e) {
+        console.error('Failed to build share URL', e);
+      }
     } catch (err) {
       setError(err.message);
     } finally {
