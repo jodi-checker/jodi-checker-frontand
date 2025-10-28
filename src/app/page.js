@@ -1,9 +1,18 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
+import Image from "next/image";
 import {
   FaUser, FaHeart, FaStar, FaFire,
   FaHandshake, FaSmile, FaHome, FaHeartbeat
 } from "react-icons/fa";
+
+const funFacts = [
+  "Do you know? Gun Milan analyzes 8 aspects of compatibility called Kootas.",
+  "A score above 18 is considered a good match in traditional astrology.",
+  "Nadi Koota is crucial for health and genetic harmony.",
+  "Gana Koota shows your temperament compatibility.",
+  "Graha Maitri reflects your emotional and mental connection.",
+];
 
 export default function MatchMaking() {
   // Use NEXT_PUBLIC_API_URL for production (set this in Vercel).
@@ -21,13 +30,6 @@ export default function MatchMaking() {
   const [fact, setFact] = useState("");
   const [result, setResult] = useState(null);
   const [error, setError] = useState("");
-  const funFacts = [
-    "Do you know? Gun Milan analyzes 8 aspects of compatibility called Kootas.",
-    "A score above 18 is considered a good match in traditional astrology.",
-    "Nadi Koota is crucial for health and genetic harmony.",
-    "Gana Koota shows your temperament compatibility.",
-    "Graha Maitri reflects your emotional and mental connection.",
-  ];
 
   // Rotate facts every 5 seconds while loading is true
   const factIndexRef = useRef(0);
@@ -47,7 +49,6 @@ export default function MatchMaking() {
       factIndexRef.current = 0;
     }
     return () => clearInterval(interval);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [loading]);
 
     // Helpers to encode/decode unicode-safe base64 for sharing
@@ -106,7 +107,6 @@ export default function MatchMaking() {
         console.error('Failed to parse share param', e);
       }
       // run-once on mount
-      // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
   const handleChange = (e) =>
@@ -168,8 +168,13 @@ export default function MatchMaking() {
       )}
 
       <div className="w-full max-w-4xl bg-white rounded-3xl shadow-2xl p-8 z-10">
-        <h1 className="text-3xl font-bold text-center text-red-600 mb-2">💖 Vedic Matchmaking</h1>
+  {/* Logo: replace /file.svg with your logo (e.g. /logo.svg) placed in the public/ folder */}
+    <div className="mx-auto mb-4 w-20 h-20 md:w-24 md:h-24">
+      <Image src="/file.svg" alt="Astro Match logo" width={96} height={96} className="mx-auto" />
+    </div>
+  <h1 className="text-3xl font-bold text-center text-red-600 mb-2">Astro Match</h1>
         <p className="text-center text-red-500 mb-8 text-lg font-medium">Check Compatibility</p>
+  <p className="text-center text-red-500 mb-8 text-lg font-medium">Your accuracy is our accuracy.</p>
 
         <form onSubmit={handleSubmit} className="grid md:grid-cols-2 gap-6">
           <div className="bg-red-50 p-5 rounded-xl shadow-inner">
